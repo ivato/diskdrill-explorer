@@ -10,9 +10,9 @@ var lastMessage = '',
     COMPLETE : nothing is running and should not, except on demand
 
     Now we launch each function in a waterfall.
-    we count if required then…
-    we read if required then…
-    we identify if required then…
+    we count if required, then…
+    we read if required, then…
+    we identify if required, then…
     complete : we can check our images
 */
 
@@ -20,8 +20,9 @@ module.exports.pending_requests = {};
 //
 module.exports.parseImageData = function(options,cb){
     setTimeout(function(){
-        cb()
-    },10000000);
+        console.log('parseImageData blocked');
+        cb();
+    },1000);
     return;
     var _onComplete = function(err,image){
         if ( !image ){
