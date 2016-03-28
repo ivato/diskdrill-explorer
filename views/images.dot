@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <title>{{=it._id||'Images'}}</title>
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{=it.httpRootPath}}/static/css/bootstrap.min.css" rel="stylesheet">
   </head>
   <body>
     <!-- Modal -->
@@ -46,18 +46,18 @@
           <nav>
             <ul class="pager">
               {{?it.skip>0}}
-              <li class="previous"><a href="/images?skip={{=it.skip-1}}"><span aria-hidden="true">&larr;</span> Précédent</a></li>
+              <li class="previous"><a href="{{=it.httpRootPath}}/images?skip={{=it.skip-1}}"><span aria-hidden="true">&larr;</span> Précédent</a></li>
               {{??}}
-              <li class="previous disabled"><a href="/images?skip={{=it.skip}}"><span aria-hidden="true">&larr;</span> Précédent</a></li>
+              <li class="previous disabled"><a href="{{=it.httpRootPath}}/images?skip={{=it.skip}}"><span aria-hidden="true">&larr;</span> Précédent</a></li>
               {{?}}
-              <li><a id="throw" href="/images/api/update?update=throw&image={{=it.image._id}}" class="btn text-danger"><i class="glyphicon glyphicon-remove" ></i> Jeter</a></li>
+              <li><a id="throw" href="{{=it.httpRootPath}}/images/api/update?update=throw&image={{=it.image._id}}" class="btn text-danger"><i class="glyphicon glyphicon-remove" ></i> Jeter</a></li>
               <li><button data-toggle="modal" data-target="#previous-throw" class="btn btn-default"><i class="glyphicon glyphicon-repeat" ></i> Précédents élements supprimés…</button></li>
               <li><span><strong>Dimensions : {{=it.image.width}}x{{=it.image.height}}</strong></span></li>
-              <li><a id="keep"  href="/images/api/update?update=keep&image={{=it.image._id}}" class="btn text-success"><i class="glyphicon glyphicon-ok" ></i> Garder</a></li>
+              <li><a id="keep"  href="{{=it.httpRootPath}}/images/api/update?update=keep&image={{=it.image._id}}" class="btn text-success"><i class="glyphicon glyphicon-ok" ></i> Garder</a></li>
               {{?it.skip< it.processInfos.identify_done-1}}
-              <li class="next"><a href="/images?skip={{=it.skip+1}}">Suivant <span aria-hidden="true">&rarr;</span></a></li>
+              <li class="next"><a href="{{=it.httpRootPath}}/images?skip={{=it.skip+1}}">Suivant <span aria-hidden="true">&rarr;</span></a></li>
               {{??}}
-              <li class="next disabled"><a href="/images?skip={{=it.skip}}">Suivant <span aria-hidden="true">&rarr;</span></a></li>
+              <li class="next disabled"><a href="{{=it.httpRootPath}}/images?skip={{=it.skip}}">Suivant <span aria-hidden="true">&rarr;</span></a></li>
               {{?}}
             </ul>
           </nav>
@@ -65,21 +65,21 @@
         <div class="col-md-12" >
           <div id="image-container" style="width:100%;" >
             {{?it.image._id}}
-            <img src="/images/api/file?path={{=it.image._id}}" alt="{{=it.image._id}}" class="img-thumbnail" >
+            <img src="{{=it.httpRootPath}}/images/api/file?path={{=it.image._id}}" alt="{{=it.image._id}}" class="img-thumbnail" >
             {{?}}
           </div>
         </div>
         <hr>
       </div>
     </div>
-    <script src="/static/js/jquery-2.1.3.min.js"></script>
-    <script src="/static/js/bootstrap.min.js"></script>
+    <script src="{{=it.httpRootPath}}/static/js/jquery-2.1.3.min.js"></script>
+    <script src="{{=it.httpRootPath}}/static/js/bootstrap.min.js"></script>
     <script type="text/javascript">
 
 $(document).ready(function(){
 
   var grab_load = function(){
-    $.post('/images/api/process_infos',{},function(response){
+    $.post('{{=it.httpRootPath}}/images/api/process_infos',{},function(response){
       console.log(response);
       if ( response && response.success ) {
         $('#grab_infos').html('Statut recherche : '+response.identify_done+'/'+ response.grab_done+'/'+response.grab_total+' '+response.status+'</p>');

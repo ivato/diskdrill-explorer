@@ -247,6 +247,7 @@ module.exports.handleGetRequest = function(req,res){
     var skip = parseInt(req.query.skip||0,10);
     var _onComplete = function(err,result){
         res.send(dots.images({
+            httpRootPath: httpRootPath,
             skip        : skip,
             total       : processInfos.grab_total,
             image       : result&&result[0]||{},
