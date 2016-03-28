@@ -1,0 +1,41 @@
+{
+  "name": "diskdrill-explorer",
+  "description": "",
+  "version": "0.0.1",
+  "author": {
+    "name": "Ivato",
+    "email": "ivan.touzeau@gmail.com"
+  },
+  "contributors": [
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ivato/diskdrill-explorer"
+  },
+  "homepage": "http://ivato.github.io",
+  "keywords": [
+    "diskdrill"
+  ],
+  "dependencies": {
+    "express": "~4.12.3",
+    "mongojs": "~0.18.2",
+    "lodash": "~3.5.0",
+    "optimist": "0.6.0",
+    "moment": "2.10.6",
+    "async": "~0.9.0",
+    "dot":"~1.0.3",
+  },
+  "devDependencies": {
+  },
+  "engines": {
+    "node": ">= 0.10.0"
+  },
+  "files": [
+  ],
+  "scripts": {
+  },
+  "_id": "diskdrill-explorer@0.0.1",
+  "_from": "express@*",
+  "_npmVersion": "1.4.28"
+}
