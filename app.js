@@ -1,3 +1,10 @@
+/*
+  http://stackoverflow.com/questions/21656420/failed-to-load-c-bson-extension
+
+  https://developer.xamarin.com/guides/testcloud/calabash/configuring/osx/install-xcode-command-line-tools/
+  
+*/
+
 var fs = require('fs'),
     async = require('async'),
     express = require('express'),

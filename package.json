@@ -19,7 +19,7 @@
   ],
   "dependencies": {
     "express": "~4.12.3",
-    "mongojs": "~0.18.2",
+    "mongojs": "2.3.0",
     "lodash": "~3.5.0",
     "optimist": "0.6.0",
     "moment": "2.10.6",
