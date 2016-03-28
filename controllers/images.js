@@ -2,7 +2,7 @@ var lastMessage = '',
     force_grab = false;
 
 /*
-    possible values of processInfos.grab_status :
+    possible values of processInfos.status :
     IDLE     : nothing is running but it should start quickly
     COUNT    : counting images
     READ     : parse folders and inserting into database ( done after counting )
@@ -19,17 +19,13 @@ var lastMessage = '',
 module.exports.pending_requests = {};
 //
 module.exports.parseImageData = function(options,cb){
-    setTimeout(function(){
-        console.log('parseImageData blocked');
-        cb();
-    },1000);
-    return;
-    var _onComplete = function(err,image){
+    console.log('parseImageData…')
+    var _onComplete = function(err,image){ 
         if ( !image ){
-            processInfos.grab_status = 'COMPLETE';
+            processInfos.status = 'COMPLETE';
             cb(null,processInfos);
         } else {
-            global.processInfos.grab_status = 'IDENTIFY';
+            global.processInfos.status = 'IDENTIFY';
             var child = child_process.spawn('identify',[image._id]);
             var response = '',
                 errString = '';
@@ -48,9 +44,10 @@ module.exports.parseImageData = function(options,cb){
                                 status  : 1
                             }};
                             if ( !image.width ){
-                                console.log('image sans width ???',response);
+                                console.log('svg ?',response);
                             };
                             mongodb.collection('images').update({_id:image._id},updater,{upsert:false},function(err,result){
+                                console.log(err,result);
                                 if ( !options._id ) {
                                     _parseNextImage();
                                 } else {
@@ -74,12 +71,14 @@ module.exports.parseImageData = function(options,cb){
             child.stderr.on('close',function(){
                 if ( errString.length ){
                     cb(new Error(errString));
+                } else {
+                    console.log('pas d\'err…');
                 };
             });
         };
     };
     var _parseNextImage = function(){
-        if ( !options._id ){
+        if ( !options || !options._id ){
             mongodb.collection('images').findOne({status:0},_onComplete);
         } else {
             _onComplete(null,options);
@@ -93,9 +92,16 @@ module.exports.grabFiles = function(options,cb){
         cb(null,processInfos);
     } else {
         console.log('Grabbing files…');
-        processInfos.grab_status = 'READ';
+        processInfos.status = 'READ';
         processInfos.grab_done = 0;
-        var exclusions_regexp = new RegExp('('+settings.exclusions.join('|')+')');
+        var dispatched = false;
+        var _onComplete = function(){
+            if ( processInfos.grab_done == processInfos.grab_total && !dispatched ){
+                dispatched = true;
+                saveProcessInfos(cb);
+            };
+        }
+        var exclusions_regexp = settings.exclusions && new RegExp('('+settings.exclusions.join('|')+')');
         var exec = child_process.spawn('find',[settings.rootPath,'-type','f']);
         var readline = require('readline');
         var rl = readline.createInterface({
@@ -105,18 +111,16 @@ module.exports.grabFiles = function(options,cb){
         });
         rl.on('error',function(error){
             console.log('readline error',error);
-            cb(error);
+            if ( !dispatched ){
+                dispatched = true;
+                cb(error);
+            };
         });
         rl.on('line',function(line){
             processInfos.grab_done++;
             lastMessage = line;
             //console.log(processInfos.grab_done,processInfos.grab_total);
-            var _onComplete = function(){
-                if ( processInfos.grab_done == processInfos.grab_total ){
-                    saveProcessInfos(cb);
-                };
-            }
-            if ( line.match(exclusions_regexp) ){
+            if ( exclusions_regexp && line.match(exclusions_regexp) ){
                 _onComplete(null);
             } else {
                 // creating the image document, if it does not exists.
@@ -125,11 +129,11 @@ module.exports.grabFiles = function(options,cb){
             };
         });
         rl.on('end',function(){
-            console.log('readline end.',processInfos);
+            console.log('readline end.');
         });
         rl.on('close',function(){
-            console.log('readline close.',processInfos);
-            saveProcessInfos(cb);
+            console.log('readline close.');
+            _onComplete(null);
         });
     };
 };
@@ -139,7 +143,7 @@ module.exports.grabFiles = function(options,cb){
 module.exports.countFiles = function(cb){
     if ( !processInfos.grab_total ){
         console.log('Counting files… '+settings.rootPath);
-        processInfos.grab_status = 'COUNT';
+        processInfos.status = 'COUNT';
         child_process.exec('find '+settings.rootPath+' -type f -ls | wc -l',function(err,stdout,stderr){
             processInfos.grab_total = parseInt(stdout.toString().trim(),10);
             console.log('Files…',processInfos.grab_total);
@@ -164,7 +168,7 @@ async.waterfall([module.exports.countFiles,module.exports.grabFiles,module.expor
 
 module.exports.handleApiRequest = function(req,res){
     switch( req.params.action ){
-        case 'grab_infos' :
+        case 'process_infos' :
             res.send(_.extend({success:true},processInfos));
             break;
         case 'pending' :
@@ -209,19 +213,27 @@ module.exports.handleApiRequest = function(req,res){
 };
 
 module.exports.handleGetRequest = function(req,res){
-
     /*
         Il nous faut
             - le décompte total, le décompte actuellement fait sur la lecture des fichiers
             - idem, sur la base de données : le total, et l'actuellement "coché"
             les décomptes, on va les faire en async.
     */
-    mongodb.collection('images').find({status:0}).sort({width:-1,height:-1}).limit(1,function(err,result){
+    var skip = parseInt(req.query.skip||0,10);
+    var _onComplete = function(err,result){
         res.send(dots.images({
+            skip        : skip,
+            total       : processInfos.grab_total,
             image       : result&&result[0]||{},
-            lastMessage : lastMessage || ''
-        }));
-    });
+            lastMessage : lastMessage || '',
+            processInfos: processInfos
+        }));        
+    };
+    if ( skip ){
+        mongodb.collection('images').find({status:1}).sort({width:-1,height:-1}).skip(skip).limit(1,_onComplete);
+    } else {
+        mongodb.collection('images').find({status:1}).sort({width:-1,height:-1}).limit(1,_onComplete);
+    };
 };
 
 

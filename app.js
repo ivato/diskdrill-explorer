@@ -26,10 +26,10 @@ global.saveProcessInfos = function(data,cb){
   if ( cb ){
     _.extend(processInfos,data);
   } else {
-    cb = data;
+    cb = data || _.noop;
   };
   fs.writeFile('process_infos.json',JSON.stringify(processInfos),function(err){
-    cb && cb(err,processInfos);
+    cb(err,processInfos);
   });
 };
 
@@ -61,18 +61,19 @@ global.loadProcessInfos(function(err,fileData){
   var app = require('express')();
 
   var imagesController = require('./controllers/images');
+  var httpRootPath = settings.http.path||'';
 
-  app.use('/static',express.static('static'));
+  app.use(httpRootPath+'/static',express.static('static'));
 
-  app.get('/', function(req,res){
+  app.get(httpRootPath+'/', function(req,res){
       res.redirect('/images');
   });
 
-  app.get( '/images/:id?', imagesController.handleGetRequest);
+  app.get(httpRootPath+'/images/:id?', imagesController.handleGetRequest);
 
-  app.all( '/images/api/:action?/:option?',imagesController.handleApiRequest);
+  app.all(httpRootPath+'/images/api/:action?/:option?',imagesController.handleApiRequest);
 
-  var server = app.listen(80, function () {
+  var server = app.listen(settings.http.port, function () {
     console.log('Now listening at http://%s:%s', server.address().address, server.address().port);
   });
 });
