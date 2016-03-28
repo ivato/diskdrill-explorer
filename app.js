@@ -5,7 +5,8 @@ var fs = require('fs'),
     settings = require('./settings.js'),
     mongodb = require('mongojs')(settings.mongodb),
     dots = require("dot").process({path: "./views"}),
-    child_process = require('child_process');
+    child_process = require('child_process'),
+    defaultProcessingInfos = {rootPath:settings.rootPath,identify_done:0,grab_total:0,grab_done:0,status:'IDLE'};
 
 _.extend(global,{
     fs              : fs,
@@ -15,11 +16,7 @@ _.extend(global,{
     mongodb         : mongodb,
     dots            : dots,
     child_process   : child_process,
-    processInfos    : {
-      grab_status : 'IDLE',
-      grab_total  : 0,
-      grab_done   : 0
-    }
+    processInfos    : _.clone(defaultProcessingInfos)
 });
 
 global.saveProcessInfos = function(data,cb){
@@ -43,7 +40,7 @@ global.loadProcessInfos = function(cb){
       } finally {
         if ( processInfos.rootPath != settings.rootPath || settings.reset ){
           // check consistency between path and processing infos
-          processInfos = {rootPath:settings.rootPath,grab_total:0,grab_done:0,grab_status:'PENDING'};
+          processInfos = _.clone(defaultProcessingInfos);
         }
         cb && cb(err,processInfos);
       };

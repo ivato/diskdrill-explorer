@@ -3,7 +3,7 @@ var lastMessage = '',
 
 /*
     possible values of processInfos.status :
-    IDLE     : nothing is running but it should start quickly
+    IDLE     : nothing is running, awaiting start command images/api/start
     COUNT    : counting images
     READ     : parse folders and inserting into database ( done after counting )
     IDENTIFY : identifying images ( done after read )
@@ -16,10 +16,15 @@ var lastMessage = '',
     complete : we can check our images
 */
 
+//
+mongodb.collection('images').count({status:{$gt:0}},function(err,count){
+    processInfos.identify_done = count;
+    saveProcessInfos(_.noop);
+});
+//
 module.exports.pending_requests = {};
 //
 module.exports.parseImageData = function(options,cb){
-    console.log('parseImageData…')
     var _onComplete = function(err,image){ 
         if ( !image ){
             processInfos.status = 'COMPLETE';
@@ -30,7 +35,6 @@ module.exports.parseImageData = function(options,cb){
             var response = '',
                 errString = '';
             child.stdout.on('close',function(){
-                console.log('identify says',response);
                 setTimeout(function(){
                     var list = response.length && response.split(image._id).join('path').split(' ');
                     if ( list && list.length ){
@@ -38,16 +42,13 @@ module.exports.parseImageData = function(options,cb){
                         if ( format != 'SVG '){
                             var size = list[2].split('x');
                             var updater = {$set:{
-                                width   : parseInt(size[0],10),
-                                height  : parseInt(size[1],10),
+                                width   : parseInt(size[0],10) || 0,
+                                height  : parseInt(size[1],10) || 0,
                                 format  : format,
                                 status  : 1
                             }};
-                            if ( !image.width ){
-                                console.log('svg ?',response);
-                            };
                             mongodb.collection('images').update({_id:image._id},updater,{upsert:false},function(err,result){
-                                console.log(err,result);
+                                processInfos.identify_done++;
                                 if ( !options._id ) {
                                     _parseNextImage();
                                 } else {
@@ -60,7 +61,7 @@ module.exports.parseImageData = function(options,cb){
                     } else {
                         _parseNextImage();
                     };
-                },settings.throttleSpeed);
+                },processInfos.throttleSpeed||settings.throttleSpeed);
             });
             child.stdout.on('data',function(data){
                 response+=data.toString();
@@ -159,17 +160,39 @@ module.exports.countFiles = function(cb){
     };
 };
 
-async.waterfall([module.exports.countFiles,module.exports.grabFiles,module.exports.parseImageData],function(err){
-    console.log('done');
-    if ( err ){
-        console.log('Erreur : ',err);
-    };
-});
-
 module.exports.handleApiRequest = function(req,res){
     switch( req.params.action ){
-        case 'process_infos' :
-            res.send(_.extend({success:true},processInfos));
+        case 'update'  :
+            if ( req.query.image ) {
+                mongodb.collection('images').update({_id:req.query.image},{$set:{status:req.query.update=='throw'?4:3,status_date:new Date()}},function(){
+                    res.redirect('/images');
+                });
+            } else {
+                res.status(404).end();
+            };
+            break;
+        case 'start' :
+            if ( processInfos.status === 'IDLE' ){
+                module.exports.initProcess(_.noop);
+                res.redirect('/images');
+            } else {
+                res.send('Not permitted. processInfos.status should be IDLE but is '+processInfos.status);
+            };
+            break;
+        case 'infos' :
+            // get and update processInfos.
+            var setter = req.query || req.body;
+            if ( _.size(setter) ){
+                if ( setter.throttleSpeed ){
+                    setter.throttleSpeed = parseInt(setter.throttleSpeed,10);
+                    if ( setter.throttleSpeed < 1000 ){
+                        delete setter.throttleSpeed;
+                    };
+                };
+            };
+            saveProcessInfos(setter,function(){
+                res.send(_.extend({success:true},processInfos));
+            });
             break;
         case 'pending' :
             if ( req.body.request_id && module.exports.pending_requests[req.body.request_id] ){
@@ -202,8 +225,10 @@ module.exports.handleApiRequest = function(req,res){
             };
             break;
         case 'db_reset' :
-            mongodb.collection('images').remove(function(){
-                res.send({success:true});
+            mongodb.collection('images').remove({},function(){
+                saveProcessInfos({status:'IDLE',grab_total:0,grab_done:0},function(){
+                    res.send({success:true});
+                });
             });
             break;
         default :
@@ -227,7 +252,7 @@ module.exports.handleGetRequest = function(req,res){
             image       : result&&result[0]||{},
             lastMessage : lastMessage || '',
             processInfos: processInfos
-        }));        
+        }));
     };
     if ( skip ){
         mongodb.collection('images').find({status:1}).sort({width:-1,height:-1}).skip(skip).limit(1,_onComplete);
@@ -236,5 +261,14 @@ module.exports.handleGetRequest = function(req,res){
     };
 };
 
-
-
+module.exports.initProcess = function(cb){
+    console.log('initProcess …');
+    async.waterfall([module.exports.countFiles,module.exports.grabFiles,module.exports.parseImageData],function(err){
+        console.log('initProcess done…');
+        if ( err ){
+            console.log('Error : ',err);
+        } else {
+            saveProcessInfos({status:'COMPLETE'},cb);
+        };
+    });
+};

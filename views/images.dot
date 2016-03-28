@@ -35,7 +35,7 @@
     <div class="container-fluid">
       <div class="row" style="margin-top:6px;">
         <div class="col-md-6" >
-          <p id="process_infos" >Statut recherche : {{=it.processInfos.grab_done}}/{{=it.processInfos.grab_total}} {{=it.processInfos.status}}</p>
+          <p id="process_infos" >Statut recherche : {{=it.processInfos.identify_done}}/{{=it.processInfos.grab_done}}/{{=it.processInfos.grab_total}} {{=it.processInfos.status}}</p>
         </div>
         <div class="col-md-6" >
           <p>{{=it.lastMessage||''}}</p>
@@ -50,11 +50,11 @@
               {{??}}
               <li class="previous disabled"><a href="/images?skip={{=it.skip}}"><span aria-hidden="true">&larr;</span> Précédent</a></li>
               {{?}}
+              <li><a id="throw" href="/images/api/update?update=throw&image={{=it.image._id}}" class="btn text-danger"><i class="glyphicon glyphicon-remove" ></i> Jeter</a></li>
               <li><button data-toggle="modal" data-target="#previous-throw" class="btn btn-default"><i class="glyphicon glyphicon-repeat" ></i> Précédents élements supprimés…</button></li>
-              <li><button data-toggle="modal" data-target="#previous-keep" class="btn btn-danger"><i class="glyphicon glyphicon-remove" ></i> Jeter</button></li>
               <li><span><strong>Dimensions : {{=it.image.width}}x{{=it.image.height}}</strong></span></li>
-              <li><button id="keep" class="btn btn-success"><i class="glyphicon glyphicon-ok" ></i> Garder</button></li>
-              {{?it.skip< it.processInfos.grab_total}}
+              <li><a id="keep"  href="/images/api/update?update=keep&image={{=it.image._id}}" class="btn text-success"><i class="glyphicon glyphicon-ok" ></i> Garder</a></li>
+              {{?it.skip< it.processInfos.identify_done-1}}
               <li class="next"><a href="/images?skip={{=it.skip+1}}">Suivant <span aria-hidden="true">&rarr;</span></a></li>
               {{??}}
               <li class="next disabled"><a href="/images?skip={{=it.skip}}">Suivant <span aria-hidden="true">&rarr;</span></a></li>
@@ -70,12 +70,6 @@
           </div>
         </div>
         <hr>
-        <div class="col-md-12" >
-          <div>
-            <button id="keep" class="btn btn-success pull-right"><i class="glyphicon glyphicon-ok" ></i> Garder</button>
-            <button id="throw" class="btn btn-danger pull-left"><i class="glyphicon glyphicon-remove" ></i> Jeter</button>
-          </div>
-        </div>
       </div>
     </div>
     <script src="/static/js/jquery-2.1.3.min.js"></script>
@@ -88,7 +82,7 @@ $(document).ready(function(){
     $.post('/images/api/process_infos',{},function(response){
       console.log(response);
       if ( response && response.success ) {
-        $('#grab_infos').html('Statut recherche : '+response.grab_done+'/'+response.grab_total+' '+response.status+'</p>');
+        $('#grab_infos').html('Statut recherche : '+response.identify_done+'/'+ response.grab_done+'/'+response.grab_total+' '+response.status+'</p>');
       } else {
         console.log(response);
       };
