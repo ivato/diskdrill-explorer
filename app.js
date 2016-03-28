@@ -1,10 +1,3 @@
-/*
-  http://stackoverflow.com/questions/21656420/failed-to-load-c-bson-extension
-
-  https://developer.xamarin.com/guides/testcloud/calabash/configuring/osx/install-xcode-command-line-tools/
-  
-*/
-
 var fs = require('fs'),
     async = require('async'),
     express = require('express'),
@@ -65,12 +58,12 @@ global.loadProcessInfos(function(err,fileData){
   var app = require('express')();
 
   var imagesController = require('./controllers/images');
-  var httpRootPath = settings.http.path||'';
+  var httpRootPath = global.httpRootPath = settings.http.path||'';
 
   app.use(httpRootPath+'/static',express.static('static'));
 
   app.get(httpRootPath+'/', function(req,res){
-      res.redirect('/images');
+      res.redirect(httpRootPath+'/images');
   });
 
   app.get(httpRootPath+'/images/:id?', imagesController.handleGetRequest);

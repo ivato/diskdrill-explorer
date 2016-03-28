@@ -165,7 +165,7 @@ module.exports.handleApiRequest = function(req,res){
         case 'update'  :
             if ( req.query.image ) {
                 mongodb.collection('images').update({_id:req.query.image},{$set:{status:req.query.update=='throw'?4:3,status_date:new Date()}},function(){
-                    res.redirect('/images');
+                    res.redirect(httpRootPath+'/images');
                 });
             } else {
                 res.status(404).end();
@@ -174,7 +174,7 @@ module.exports.handleApiRequest = function(req,res){
         case 'start' :
             if ( processInfos.status === 'IDLE' ){
                 module.exports.initProcess(_.noop);
-                res.redirect('/images');
+                res.redirect(httpRootPath+'/images');
             } else {
                 res.send('Not permitted. processInfos.status should be IDLE but is '+processInfos.status);
             };
