@@ -71,8 +71,7 @@ if ( argv.remove ){
         lines.push(line);
     });
 } else if ( argv.regex ){
-    var extensions = [];
-    _.uniq(settings.extensions.map(function(o){
+    var extensions = _.uniq(settings.extensions.map(function(o){
         return o.toLowerCase();
     }).concat(settings.extensions.map(function(o){
         return o.toUpperCase();
