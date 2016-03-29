@@ -76,16 +76,23 @@ if ( argv.remove ){
     }).concat(settings.extensions.map(function(o){
         return o.toUpperCase();
     })));
-    var processArguments = ['-E',settings.rootPath,'-regex',"'*\\("+extensions.join('|')+")'",'-type','f'];
+    var processArguments = ['-E',settings.rootPath,'-regex',"'.*\\.("+extensions.join('|')+")'",'-type','f'];
     if ( argv.count ){
-        processArguments = processArguments.concat('-ls;|;wc;-l'.split(';'));
+        processArguments = 'find '+processArguments.concat('-ls;|;wc;-l'.split(';')).join(' ');
+        console.log(processArguments);
+        child_process.exec(processArguments,function(err,stdout,stderr){
+            console.log('err',err);
+            console.log(stdout.toString());
+            console.log(stderr.toString());
+        });
+    } else {
+        console.log(processArguments);
+        var exec = child_process.spawn('find',processArguments);
+        exec.stdout.on('data',function(data){
+            console.log(data.toString());
+        });
+        exec.stderr.on('data',function(data){
+            console.log(data.toString());
+        });
     };
-    console.log(processArguments);
-    var exec = child_process.spawn('find',processArguments);
-    exec.stdout.on('data',function(data){
-        console.log(data.toString());
-    });
-    exec.stderr.on('data',function(data){
-        console.log(data.toString());
-    });
 };
