@@ -81,6 +81,7 @@ if ( argv.remove ){
     if ( argv.count ){
         processArguments = processArguments.concat('-ls;|;wc;-l'.split(';'));
     };
+    console.log(processArguments);
     var exec = child_process.spawn('find',processArguments);
     exec.stdout.on('data',function(data){
         console.log(data.toString());
