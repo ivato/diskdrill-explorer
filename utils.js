@@ -76,9 +76,27 @@ if ( argv.remove ){
     }).concat(settings.extensions.map(function(o){
         return o.toUpperCase();
     })));
-    var processArguments = ['-E',settings.rootPath,'-regex',"'.*\\.("+extensions.join('|')+")'",'-type','f'];
+    var processArguments; // = [settings.rootPath,'-type','f'];
+    /*if ( settings.extensions && settings.extensions.length ){
+        var extensions_str = '-name '
+        process.arguments.push('-name')
+        processArguments.push('-name',settings.extensions)
+    }*/
+    if ( process.platform == 'darwin' ) {
+        var regex = '.*\\.('+extensions.join('|')+')$';
+        if ( argv.count ){
+            regex = '"' + regex +'"';
+        };
+        processArguments = ['-E',settings.rootPath,'-regex',regex,'-type','f'];
+    } else {
+        var regex = '.*\\.\\('+extensions.join('\\|')+'\\)$';
+        if ( argv.count ){
+            regex = '"'+regex+'"';
+        };
+        processArguments = [settings.rootPath,'-regex',regex,'-type','f'];
+    };
     if ( argv.count ){
-        processArguments = 'find '+processArguments.concat('-ls;|;wc;-l'.split(';')).join(' ');
+        processArguments = 'find '+processArguments.join(' ')+' -ls | wc -l';
         console.log(processArguments);
         child_process.exec(processArguments,function(err,stdout,stderr){
             console.log('err',err);
@@ -92,7 +110,7 @@ if ( argv.remove ){
             console.log(data.toString());
         });
         exec.stderr.on('data',function(data){
-            console.log(data.toString());
+            console.log('error',data.toString());
         });
     };
 };

@@ -110,7 +110,8 @@ module.exports.grabFiles = function(options,cb){
                 saveProcessInfos(cb);
             };
         }
-        var exclusions_regexp = settings.exclusions && new RegExp('('+settings.exclusions.join('|')+')');
+        var exclusions_regexp = settings.exclusions && new RegExp('('+settings.exclusions.join('|')+')','i');
+        var exclusions_regexp = settings.extensions && new RegExp('('+settings.extensions.join('|')+')','i');
         var exec = child_process.spawn('find',[settings.rootPath,'-type','f']);
         var readline = require('readline');
         var rl = readline.createInterface({
@@ -131,7 +132,7 @@ module.exports.grabFiles = function(options,cb){
             //console.log(processInfos.grab_done,processInfos.grab_total);
             if ( exclusions_regexp && line.match(exclusions_regexp) ){
                 _onComplete(null);
-            } else {
+            } else if ( !extensions_regexp || (extensions_regexp && line.match(extensions_regexp)) ){
                 // creating the image document, if it does not exists.
                 // status : // 0 : no identify , 1 : identify done, 2 : refused, 3 : selected.
                 mongodb.collection('images').update({_id:line},{$setOnInsert:{status:0,tags:[]}},{upsert:true},_onComplete);
