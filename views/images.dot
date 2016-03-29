@@ -64,7 +64,7 @@
         </div>
         <div class="col-md-12" >
           <div id="image-container" style="width:100%;" >
-            {{?it.image._id && ['TIF','TIFF'].indexOf(it.image.extension)>-1}}
+            {{?it.image._id && ['TIF','TIFF'].indexOf(it.image.format)>-1}}
             <img src="{{=it.httpRootPath}}/images/api/file?path={{=it.image._id}}" alt="{{=it.image._id}}" class="img-thumbnail" >
             {{?}}
           </div>
@@ -112,7 +112,7 @@ $(document).ready(function(){
     xhr.send();
   };
 
-  if ( ['TIF','TIFF'].indexOf("{{=it.image.extension}}")>-1 ){
+  if ( ['TIF','TIFF'].indexOf("{{=it.image.format}}")>-1 ){
     loadImage("{{=it.httpRootPath}}/images/api/file?path={{=it.image._id}}");
   };
 

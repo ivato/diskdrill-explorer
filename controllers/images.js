@@ -294,7 +294,6 @@ module.exports.handleGetRequest = function(req,res){
             lastMessage : lastMessage || '',
             processInfos: processInfos
         }));
-        console.log(result&&result[0]);
     };
     if ( skip ){
         mongodb.collection('images').find({status:1}).sort({width:-1,height:-1}).skip(skip).limit(1,_onComplete);
