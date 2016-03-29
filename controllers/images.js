@@ -125,6 +125,7 @@ module.exports.grabFiles = function(options,cb){
             processArguments = [settings.rootPath,'-regex',regex,'-type','f'];
         };
         var exec = child_process.spawn('find',processArguments);
+        console.log('spawning find with arguments :',processArguments.join(' '));
         var readline = require('readline');
         var rl = readline.createInterface({
             input: exec.stdout,
@@ -179,6 +180,7 @@ module.exports.countFiles = function(cb){
             var regex = '".*\\.\\('+extensions.join('\\|')+'\\)$"';
             processArguments = [settings.rootPath,'-regex',regex,'-type','f'];
         };
+        console.log('executing find '+processArguments.join(' ')+' -ls | wc -l');
         child_process.exec('find '+processArguments.join(' ')+' -ls | wc -l',function(err,stdout,stderr){
             processInfos.grab_total = parseInt(stdout.toString().trim(),10);
             console.log('Files…',processInfos.grab_total);
