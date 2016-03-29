@@ -76,7 +76,7 @@ if ( argv.remove ){
     }).concat(settings.extensions.map(function(o){
         return o.toUpperCase();
     })));
-    var processArguments = ['-E',settings.rootPath,'-regex',"'*\\('+extensions.join('|')+')'",'-type','f'];
+    var processArguments = ['-E',settings.rootPath,'-regex',"'*\\("+extensions.join('|')+")'",'-type','f'];
     if ( argv.count ){
         processArguments = processArguments.concat('-ls;|;wc;-l'.split(';'));
     };
