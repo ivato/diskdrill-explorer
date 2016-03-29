@@ -14,6 +14,13 @@ var lastMessage = '',
     we read if required, then…
     we identify if required, then…
     complete : we can check our images
+    
+    image.status
+    0   : not identifyed
+    1   : identifyed
+    3   : keep
+    4   : throw
+    10  : error while identification
 */
 
 //
@@ -38,26 +45,22 @@ module.exports.parseImageData = function(options,cb){
                 setTimeout(function(){
                     var list = response.length && response.split(image._id).join('path').split(' ');
                     if ( list && list.length ){
-                        var format = list[1];
-                        if ( format != 'SVG '){
-                            var size = list[2].split('x');
-                            var updater = {$set:{
-                                width   : parseInt(size[0],10) || 0,
-                                height  : parseInt(size[1],10) || 0,
-                                format  : format,
-                                status  : 1
-                            }};
-                            mongodb.collection('images').update({_id:image._id},updater,{upsert:false},function(err,result){
-                                processInfos.identify_done++;
-                                if ( !options._id ) {
-                                    _parseNextImage();
-                                } else {
-                                    cb(err,result);
-                                };
-                            });
-                        } else {
-                            _parseNextImage();
-                        };
+                        var format = list[1].trim().toUpperCase();
+                        var size = list[2].split('x');
+                        var updater = {$set:{
+                            width   : parseInt(size[0],10) || 0,
+                            height  : parseInt(size[1],10) || 0,
+                            format  : format,
+                            status  : 1
+                        }};
+                        mongodb.collection('images').update({_id:image._id},updater,{upsert:false},function(err,result){
+                            processInfos.identify_done++;
+                            if ( !options._id ) {
+                                _parseNextImage();
+                            } else {
+                                cb(err,result);
+                            };
+                        });
                     } else {
                         _parseNextImage();
                     };
@@ -71,9 +74,14 @@ module.exports.parseImageData = function(options,cb){
             });
             child.stderr.on('close',function(){
                 if ( errString.length ){
-                    cb(new Error(errString));
-                } else {
-                    console.log('pas d\'err…');
+                    mongodb.collection('images').update({_id:image._id},{status:10},{upsert:false},function(err,result){
+                        processInfos.identify_done++;
+                        if ( !options._id ) {
+                            _parseNextImage();
+                        } else {
+                            cb(new Error(errString),result);
+                        };
+                    });
                 };
             });
         };
