@@ -81,7 +81,7 @@ $(document).ready(function(){
 
   var grab_load = function(){
     $.post('{{=it.httpRootPath}}/images/api/infos',{},function(response){
-      if ( response && response.success ) {
+      if ( response && response.grab_done ) {
         $('#grab_infos').html('Statut recherche : '+response.identify_done+'/'+ response.grab_done+'/'+response.grab_total+' '+response.status+'</p>');
       } else {
         console.log(response);
