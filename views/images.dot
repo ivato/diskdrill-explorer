@@ -91,6 +91,32 @@ $(document).ready(function(){
   setInterval(grab_load,5000);
   grab_load();
 
+
+  var loadImage = function (filename) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', filename);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = function (e) {
+      var buffer = xhr.response;
+      var tiff = new Tiff({buffer: buffer});
+      var canvas = tiff.toCanvas();
+      var width = tiff.width();
+      var height = tiff.height();
+      if (canvas) {
+        var $elem = $('<div></div>');
+        $elem.append(canvas);
+        $('#image-container').html($elem);
+      };
+    };
+    xhr.send();
+  };
+
+  var imgUrl = "{{=it.httpRootPath}}/images/api/file?path={{=it.image._id}}",
+      extension = imgUrl.split('.').pop();
+  if ( extension.indexOf('tif')===0 ){
+    loadImage(imgUrl);
+  };
+
 });
 
     </script>
