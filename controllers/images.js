@@ -88,7 +88,9 @@ module.exports.parseImageData = function(options,cb){
     };
     var _parseNextImage = function(){
         if ( !options || !options._id ){
-            mongodb.collection('images').findOne({status:0},_onComplete);
+            mongodb.collection('images').find({status:0}).sort({width:-1,height:-1}).limit(1,function(err,result){
+                _onComplete(err,result&&result[0]);
+            });
         } else {
             _onComplete(null,options);
         };     
