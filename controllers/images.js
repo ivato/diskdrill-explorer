@@ -1,5 +1,5 @@
 var lastMessage = '',
-    force_grab = false;
+    PROCESS_ALLOWED = true;
 
 /*
     possible values of processInfos.status :
@@ -33,7 +33,7 @@ module.exports.pending_requests = {};
 //
 module.exports.parseImageData = function(options,cb){
     var _onComplete = function(err,image){ 
-        if ( !image ){
+        if ( !image || !PROCESS_ALLOWED ){
             processInfos.status = 'COMPLETE';
             cb(null,processInfos);
         } else {
@@ -98,7 +98,7 @@ module.exports.parseImageData = function(options,cb){
 
 module.exports.grabFiles = function(options,cb){
     if ( processInfos.grab_total && (processInfos.grab_done==processInfos.grab_total) ){
-        cb(null,processInfos);
+        saveProcessInfos(cb);
     } else {
         console.log('Grabbing files…');
         processInfos.status = 'READ';
@@ -111,8 +111,20 @@ module.exports.grabFiles = function(options,cb){
             };
         }
         var exclusions_regexp = settings.exclusions && new RegExp('('+settings.exclusions.join('|')+')','i');
-        var exclusions_regexp = settings.extensions && new RegExp('('+settings.extensions.join('|')+')','i');
-        var exec = child_process.spawn('find',[settings.rootPath,'-type','f']);
+        var extensions = _.uniq(settings.extensions.map(function(o){
+            return o.toLowerCase();
+        }).concat(settings.extensions.map(function(o){
+            return o.toUpperCase();
+        })));
+        var processArguments;
+        if ( process.platform == 'darwin' ) {
+            var regex = '.*\\.('+extensions.join('|')+')$';
+            processArguments = ['-E',settings.rootPath,'-regex',regex,'-type','f'];
+        } else {
+            var regex = '.*\\.\\('+extensions.join('\\|')+'\\)$';
+            processArguments = [settings.rootPath,'-regex',regex,'-type','f'];
+        };
+        var exec = child_process.spawn('find',processArguments);
         var readline = require('readline');
         var rl = readline.createInterface({
             input: exec.stdout,
@@ -132,7 +144,7 @@ module.exports.grabFiles = function(options,cb){
             //console.log(processInfos.grab_done,processInfos.grab_total);
             if ( exclusions_regexp && line.match(exclusions_regexp) ){
                 _onComplete(null);
-            } else if ( !extensions_regexp || (extensions_regexp && line.match(extensions_regexp)) ){
+            } else {
                 // creating the image document, if it does not exists.
                 // status : // 0 : no identify , 1 : identify done, 2 : refused, 3 : selected.
                 mongodb.collection('images').update({_id:line},{$setOnInsert:{status:0,tags:[]}},{upsert:true},_onComplete);
@@ -154,7 +166,20 @@ module.exports.countFiles = function(cb){
     if ( !processInfos.grab_total ){
         console.log('Counting files… '+settings.rootPath);
         processInfos.status = 'COUNT';
-        child_process.exec('find '+settings.rootPath+' -type f -ls | wc -l',function(err,stdout,stderr){
+        var extensions = _.uniq(settings.extensions.map(function(o){
+            return o.toLowerCase();
+        }).concat(settings.extensions.map(function(o){
+            return o.toUpperCase();
+        })));
+        var processArguments;
+        if ( process.platform == 'darwin' ) {
+            var regex = '".*\\.('+extensions.join('|')+')$"';
+            processArguments = ['-E',settings.rootPath,'-regex',regex,'-type','f'];
+        } else {
+            var regex = '".*\\.\\('+extensions.join('\\|')+'\\)$"';
+            processArguments = [settings.rootPath,'-regex',regex,'-type','f'];
+        };
+        child_process.exec('find '+processArguments.join(' ')+' -ls | wc -l',function(err,stdout,stderr){
             processInfos.grab_total = parseInt(stdout.toString().trim(),10);
             console.log('Files…',processInfos.grab_total);
             saveProcessInfos(function(err,result){
@@ -179,6 +204,10 @@ module.exports.handleApiRequest = function(req,res){
             } else {
                 res.status(404).end();
             };
+            break;
+        case 'stop' :
+            PROCESS_ALLOWED = false;
+            res.redirect(httpRootPath+'/images');
             break;
         case 'start' :
             if ( processInfos.status === 'IDLE' ){
@@ -273,6 +302,7 @@ module.exports.handleGetRequest = function(req,res){
 
 module.exports.initProcess = function(cb){
     console.log('initProcess …');
+    PROCESS_ALLOWED = true;
     async.waterfall([module.exports.countFiles,module.exports.grabFiles,module.exports.parseImageData],function(err){
         console.log('initProcess done…');
         if ( err ){

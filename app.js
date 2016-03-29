@@ -41,7 +41,8 @@ global.loadProcessInfos = function(cb){
         if ( processInfos.rootPath != settings.rootPath || settings.reset ){
           // check consistency between path and processing infos
           processInfos = _.clone(defaultProcessingInfos);
-        }
+        };
+        processInfos.status = 'IDLE';
         cb && cb(err,processInfos);
       };
     } else if ( err && err.code == 'ENOENT' ){

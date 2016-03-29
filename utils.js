@@ -9,13 +9,13 @@ var fs = require('fs'),
     child_process = require('child_process');
 
 if ( argv.remove ){
-    mongodb.collection('images').remove({});
+    mongodb.collection('images').remove({},console.log);
 } else if ( argv.reset ){
     mongodb.collection('images').update({},{$set:{status:parseInt(argv.status||0,10)}},{multi:true},console.log);
 } else if ( argv.check ){
     mongodb.collection('images').find({},function(err,list){
         list.forEach(function(item){
-            console.log(item.status, moment(new Date(item.status_date)).format('DD/MM/YY HH:mm'));
+            console.log(item.status, item.status_date ? moment(new Date(item.status_date)).format('DD/MM/YY HH:mm') : '');
         });
     });
 } else if ( argv.identify ){
@@ -76,12 +76,7 @@ if ( argv.remove ){
     }).concat(settings.extensions.map(function(o){
         return o.toUpperCase();
     })));
-    var processArguments; // = [settings.rootPath,'-type','f'];
-    /*if ( settings.extensions && settings.extensions.length ){
-        var extensions_str = '-name '
-        process.arguments.push('-name')
-        processArguments.push('-name',settings.extensions)
-    }*/
+    var processArguments;
     if ( process.platform == 'darwin' ) {
         var regex = '.*\\.('+extensions.join('|')+')$';
         if ( argv.count ){
