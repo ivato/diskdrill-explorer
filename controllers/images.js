@@ -37,7 +37,7 @@ module.exports.parseImageData = function(options,cb){
             processInfos.status = 'COMPLETE';
             cb(null,processInfos);
         } else {
-            global.processInfos.status = 'IDENTIFY';
+            processInfos.status = 'IDENTIFY';
             var child = child_process.spawn('identify',[image._id]);
             var response = '',
                 errString = '';
@@ -75,7 +75,6 @@ module.exports.parseImageData = function(options,cb){
             child.stderr.on('close',function(){
                 if ( errString.length ){
                     mongodb.collection('images').update({_id:image._id},{status:10},{upsert:false},function(err,result){
-                        processInfos.identify_done++;
                         if ( !options._id ) {
                             _parseNextImage();
                         } else {
@@ -142,7 +141,6 @@ module.exports.grabFiles = function(options,cb){
         rl.on('line',function(line){
             processInfos.grab_done++;
             lastMessage = line;
-            //console.log(processInfos.grab_done,processInfos.grab_total);
             if ( exclusions_regexp && line.match(exclusions_regexp) ){
                 _onComplete(null);
             } else {
