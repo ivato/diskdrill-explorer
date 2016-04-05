@@ -40,9 +40,11 @@ module.exports.parseImageData = function(options,cb){
             processInfos.status = 'IDENTIFY';
             var child = child_process.spawn('identify',[image._id]);
             console.log('now processing '+image._id);
+            var startTime = new Date().getTime();
             var response = '',
                 errString = '';
             child.stdout.on('close',function(){
+                console.log('terminé en '+(new Date().getTime()-startTime)+'ms')
                 setTimeout(function(){
                     var list = response.length && response.split(image._id).join('path').split(' ');
                     if ( list && list.length ){
