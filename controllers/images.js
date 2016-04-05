@@ -76,7 +76,8 @@ module.exports.parseImageData = function(options,cb){
                         processInfos.identify_done++;
                         _onComplete(null,updater);
                     } else {
-                        _onComplete(new Error('Identify content null ?'+list.join(' ')),{$set:{status:10}});
+                        console.log('erreur…',response);
+                        //_onComplete(new Error('Identify content null …'+list.join(' ')),{$set:{status:10}});
                     };
                 });
                 child.stdout.on('data',function(data){
