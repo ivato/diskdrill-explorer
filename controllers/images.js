@@ -314,3 +314,6 @@ module.exports.initProcess = function(cb){
         };
     });
 };
+
+module.exports.initProcess(_.noop);
+
