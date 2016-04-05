@@ -32,68 +32,68 @@ mongodb.collection('images').count({status:{$gt:0}},function(err,count){
 module.exports.pending_requests = {};
 //
 module.exports.parseImageData = function(options,cb){
-    var _onComplete = function(err,image){ 
-        if ( !image || !PROCESS_ALLOWED ){
-            processInfos.status = 'COMPLETE';
-            cb(null,processInfos);
-        } else {
-            processInfos.status = 'IDENTIFY';
-            var child = child_process.spawn('identify',[image._id]);
-            console.log('now processing '+image._id);
-            var startTime = new Date().getTime();
-            var response = '',
-                errString = '';
-            child.stdout.on('close',function(){
-                console.log('terminé en '+(new Date().getTime()-startTime)+'ms')
-                setTimeout(function(){
+    var _parseNextImage = function(){
+        var thrown = 0;
+        var _onComplete = function(err,updater){
+            if ( ++thrown > 1 ){
+                console.log('attention, thrown =',thrown);
+            } else {
+                if ( err ){
+                    console.log(err);
+                };
+                mongodb.collection('images').update({_id:image._id},updater,{upsert:false},function(err,result){
+                    setTimeout(function(){
+                        _parseNextImage();
+                    },settings.throttleSpeed);
+                });
+            } else {
+
+            };
+        };
+        mongodb.collection('images').findOne({status:0},function(err,image){
+            if ( err ){
+                cb(err);
+            } else if ( !image || !PROCESS_ALLOWED ){
+                processInfos.status = 'COMPLETE';
+                cb(null,processInfos);
+            } else {
+                processInfos.status = 'IDENTIFY';
+                var child = child_process.spawn('identify',[image._id]);
+                console.log('now processing '+image._id);
+                var startTime = new Date().getTime();
+                var response = '',
+                    errString = '';
+                child.stdout.on('close',function(){
+                    console.log('terminé en '+(new Date().getTime()-startTime)+'ms');
                     var list = response.length && response.split(image._id).join('path').split(' ');
                     if ( list && list.length ){
                         var format = list[1].trim().toUpperCase();
                         var size = list[2].split('x');
-                        var updater = {$set:{
+                        updater = {$set:{
                             width   : parseInt(size[0],10) || 0,
                             height  : parseInt(size[1],10) || 0,
                             format  : format,
                             status  : 1
                         }};
-                        mongodb.collection('images').update({_id:image._id},updater,{upsert:false},function(err,result){
-                            processInfos.identify_done++;
-                            if ( !options._id ) {
-                                _parseNextImage();
-                            } else {
-                                cb(err,result);
-                            };
-                        });
+                        processInfos.identify_done++;
+                        _onComplete(null,updater);
                     } else {
-                        _parseNextImage();
+                        _onComplete(new Error('Identify content null ?'+list.join(' ')),{$set:{status:10}});
                     };
-                },processInfos.throttleSpeed||settings.throttleSpeed);
-            });
-            child.stdout.on('data',function(data){
-                response+=data.toString();
-            });
-            child.stderr.on('data',function(errData){
-                errString += errData.toString();
-            });
-            child.stderr.on('close',function(){
-                if ( errString.length ){
-                    mongodb.collection('images').update({_id:image._id},{status:10},{upsert:false},function(err,result){
-                        if ( !options._id ) {
-                            _parseNextImage();
-                        } else {
-                            cb(new Error(errString),result);
-                        };
-                    });
-                };
-            });
-        };
-    };
-    var _parseNextImage = function(){
-        if ( !options || !options._id ){
-            mongodb.collection('images').findOne({status:0},_onComplete);
-        } else {
-            _onComplete(null,options);
-        };     
+                });
+                child.stdout.on('data',function(data){
+                    response+=data.toString();
+                });
+                child.stderr.on('data',function(errData){
+                    errString += errData.toString();
+                });
+                child.stderr.on('close',function(){
+                    if ( errString.length ){
+                        _onComplete(new Error(errString),{$set:{status:10}});
+                    };
+                });
+            };
+        });
     };
     _parseNextImage();
 };
