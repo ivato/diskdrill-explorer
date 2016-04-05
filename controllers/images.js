@@ -46,8 +46,6 @@ module.exports.parseImageData = function(options,cb){
                         _parseNextImage();
                     },settings.throttleSpeed);
                 });
-            } else {
-
             };
         };
         mongodb.collection('images').findOne({status:0},function(err,image){
