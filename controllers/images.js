@@ -39,6 +39,7 @@ module.exports.parseImageData = function(options,cb){
         } else {
             processInfos.status = 'IDENTIFY';
             var child = child_process.spawn('identify',[image._id]);
+            console.log('now processing '+image._id);
             var response = '',
                 errString = '';
             child.stdout.on('close',function(){
