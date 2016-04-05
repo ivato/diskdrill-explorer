@@ -33,22 +33,22 @@ module.exports.pending_requests = {};
 //
 module.exports.parseImageData = function(options,cb){
     var _parseNextImage = function(){
-        var thrown = 0;
-        var _onComplete = function(err,updater){
-            if ( ++thrown > 1 ){
-                console.log('attention, thrown =',thrown);
-            } else {
-                if ( err ){
-                    console.log(err);
-                };
-                mongodb.collection('images').update({_id:image._id},updater,{upsert:false},function(err,result){
-                    setTimeout(function(){
-                        _parseNextImage();
-                    },settings.throttleSpeed);
-                });
-            };
-        };
         mongodb.collection('images').findOne({status:0},function(err,image){
+            var thrown = 0;
+            var _onComplete = function(err,updater){
+                if ( ++thrown > 1 ){
+                    console.log('attention, thrown =',thrown);
+                } else {
+                    if ( err ){
+                        console.log(err);
+                    };
+                    mongodb.collection('images').update({_id:image._id},updater,{upsert:false},function(err,result){
+                        setTimeout(function(){
+                            _parseNextImage();
+                        },settings.throttleSpeed);
+                    });
+                };
+            };
             if ( err ){
                 cb(err);
             } else if ( !image || !PROCESS_ALLOWED ){
